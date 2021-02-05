@@ -1,0 +1,315 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_NUMBER_OF_WORDS 100
+#define MAX_WORD_LENGTH 20
+
+void formatAndPrintParagraph(char *paragraph, int lineLength) {
+    char words[MAX_NUMBER_OF_WORDS][MAX_WORD_LENGTH];
+    static char wordToken[MAX_NUMBER_OF_WORDS][MAX_WORD_LENGTH];
+    int wordIndex = 0;
+    int totalWords = 0;
+
+    /**
+     * Break inputString into characters
+     */
+
+    for (int i = 0; i <= strlen(paragraph); i++) {
+
+        while (*paragraph == ' ') {
+            paragraph++;
+        }
+        if ((paragraph[i] == ' ') && (paragraph[i + 1] == ' ')) {
+            /*skip continued spaces*/
+        } else {
+            /* Current char is a space or null. Count for Word. */
+            if (paragraph[i] == '\0' || paragraph[i] == ' ') {
+
+                words[totalWords][wordIndex] = '\0';
+                totalWords++;
+                wordIndex = 0;
+            } else {
+                    words[totalWords][wordIndex] = paragraph[i];
+                    wordIndex++;
+                    /* char data check
+                    printf("Char: %c\nIndex: %d\n\n", paragraph[i], i);
+                    */
+            }
+        }
+
+    }
+    /** WordToken. */
+
+    for (int i =0; i< totalWords;i++) {
+        strcpy(wordToken[i],words[i]);
+        //printf("word%d: %s\n",i, wordToken[i]);
+    }
+
+    /**
+    * Build lines within limitLength
+    * Over LineLength: -1 word & indicator, add space to fill string, go next line.
+    * Equal to LineLength: store lineStr, go next line.
+    * Else Contcate words with ' '.
+    */
+    int wordLength[totalWords];
+    int currentLineCounter = 0;
+    int SpaceCounter = 1;
+    int maxLine = totalWords * MAX_WORD_LENGTH / lineLength;
+    char tempLine[] = "";
+    char lineStr[maxLine][lineLength + 1];
+    int lineC = 0;
+
+    int indexCtr;
+    /** Build line */
+    for (indexCtr = 0; indexCtr < totalWords; indexCtr++) {
+        wordLength[indexCtr] = strlen(words[indexCtr]);
+        currentLineCounter += (wordLength[indexCtr] + SpaceCounter);
+
+        /* Over line limit. */
+        if (currentLineCounter > lineLength + 1) {
+
+            currentLineCounter = currentLineCounter - (wordLength[indexCtr] + SpaceCounter) - SpaceCounter;
+
+            /* reset & start new line with the overload word */
+            /* check if end of the input string*/
+            if (indexCtr == totalWords - 1) {
+                strcat(tempLine, "\0");
+                strcpy(lineStr[lineC], tempLine);
+
+                /*next line (last line and last word)*/
+                lineC++;
+                strcpy(tempLine, words[indexCtr]);
+                strcat(tempLine, "\0");
+                strcpy(lineStr[lineC], tempLine);
+
+            } else { /* normal end of line */
+                strcat(tempLine, "\0");
+                strcpy(lineStr[lineC], tempLine);
+                /* new line*/
+                lineC++;
+                currentLineCounter = wordLength[indexCtr] + SpaceCounter;
+                strcpy(tempLine, "");
+                strcat(tempLine, words[indexCtr]);
+                strcat(tempLine, " ");
+            }
+
+        } else if (currentLineCounter == lineLength + 1) { /* just fit limit line length, no change*/
+            strcat(tempLine, words[indexCtr]);
+            strcat(tempLine, "\0");
+            strcpy(lineStr[lineC], tempLine);
+
+            //reset/nextLine
+            lineC++;
+            currentLineCounter = 0;
+            strcpy(tempLine, "");
+        } else { /* less than line limit. */
+            if (indexCtr == totalWords - 1) {  /* Last line under length limit.*/
+                strcat(tempLine, words[indexCtr]);
+                strcat(tempLine, "\0");
+                strcpy(lineStr[lineC], tempLine);
+
+            } else { /* middle of process.*/
+                if ((currentLineCounter + strlen(words[indexCtr + 1]) >= (lineLength + 1))) { /*avoid space at the end of line*/
+                    strcat(tempLine, words[indexCtr]);
+                } else {
+                    strcat(tempLine, words[indexCtr]);
+                    strcat(tempLine, " ");
+                }
+            }
+        }
+    }
+    /*store indicator line count*/
+    const int LineCount = lineC;
+
+
+    /*  Print line */
+    /*
+    for (int i = 0; i <= lineC; i++) {
+        printf("%s\n", lineStr[i]);
+    }
+    */
+
+    /**
+     * Format line
+     * */
+    /**
+     * Store each line into tempLine for insert space
+     * Count word in line
+     * Calculate # of space for line
+     * Arrange and insert spaces in line
+     *  if s = space# / gap# > 1 && r = space# % gap# = 0   -->   fill s in gap
+     *  else if r > 0 || s < 0;   -->   fill s in gap, gap[n] + 1, r - 1 until r = 0;
+     *
+     * */
+    char newLine[maxLine][lineLength + 1];
+    int charPerLine[LineCount + 1];
+    int GapPerLine[LineCount + 1];
+     /* EveryLine */
+    for (int i = 0; i <= LineCount; i++) {
+        strcpy(newLine[i], lineStr[i]);
+        GapPerLine[i] = 0;
+        for (int j = 0; j < strlen(lineStr[i]); j++) {
+            if (lineStr[i][j] == ' ') {
+                GapPerLine[i]++;
+            }
+            charPerLine[i] = strlen(lineStr[i]);
+        }
+
+        /*check data
+        printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+        printf("GapPerLine: %d\n", GapPerLine[i]);
+        printf("Line#: %d\n", i);
+        printf("word: %s\n", newLine[i]);
+        printf("lineLength: %lu\n\n", strlen(lineStr[i]));
+         */
+    }
+
+
+    /**
+     * Calculate spaces.
+     */
+    int extraSpace[LineCount + 1];
+    int remain[LineCount + 1];
+    int spaceEachGap[LineCount + 1];
+
+    /* Every line*/
+    for (int i = 0; i <= LineCount; i++) {
+
+        if (GapPerLine[i] == 0) { /* single word */
+            extraSpace[i] = lineLength - charPerLine[i];
+            remain[i] = lineLength - charPerLine[i];
+            spaceEachGap[i] = 0;
+        } else {
+            extraSpace[i] = lineLength - charPerLine[i];
+            remain[i] = extraSpace[i] % (GapPerLine[i]);
+            spaceEachGap[i] = extraSpace[i] / (GapPerLine[i]);
+        }
+        /*data check*/
+        /*
+        printf("GapPerLine[i]#: %d\n", GapPerLine[i]);
+        printf("lineC#: %d\n", LineCount);
+        printf("Line#: %d\n", i);
+        printf("word: %s\n", newLine[i]);
+        printf("extraSpace: %d\n", extraSpace[i]);
+        printf("remain: %d\n", remain[i]);
+        printf("spaceEachGap: %d\n\n", spaceEachGap[i]);
+        */
+
+    }
+
+    /**
+     * Fill spaces.
+     * Check Gaps, and then remainder.
+     */
+    /* Every line */
+    char formatLine[maxLine][lineLength + 1]; /* Store format string. */
+    int remainder;                            /* # of extra spaces not included within the block. */
+    int spaceBlock;                           /* # of the space in the block of space. */
+    int wordTokenPosition = 0;                /* Keep track with the processing word. */
+    char tempFormatLine[] = "";
+
+     for (int i = 0; i <= LineCount; i++) {
+
+        /* Assign value to each line. */
+        remainder  = remain[i];
+        spaceBlock = spaceEachGap[i];
+
+        /* test
+        printf("/////////LINE/////////////: %d\n", i);
+        printf("Number of Gap PerLine: %d\n", gap);
+        printf("spaceBlock: %d\n", spaceEachGap[i]);
+        printf("remainder: %d\n", remainder);
+        printf("wordTokenPosition: %d\n", wordTokenPosition);
+        printf("wordToken: %s\n", wordToken[wordTokenPosition]);
+        printf("formatLine[i]: %s\n", formatLine[i]);
+        */
+
+
+        /* Line i, insert word and space. */
+        for (int j = 0; j <= GapPerLine[i]; j++) {
+            if (spaceBlock > 0) { /* Space Block > 0. */
+                //separate evenly, wordLength, tokens[i], totalWords
+                if (j == GapPerLine[i]) { /* Check if it is last word in line. */
+                    strcat(tempFormatLine, wordToken[wordTokenPosition]);
+                    strcat(tempFormatLine, "\0");
+                    wordTokenPosition++;
+                    strcpy(formatLine[i], tempFormatLine);
+                    strcpy(tempFormatLine, "");
+
+                } else { /* Not the last word in line. */
+                    strcat(tempFormatLine,wordToken[wordTokenPosition]);
+                    strcat(tempFormatLine," ");
+                    for (int i = 0; i < spaceBlock; i++) {
+                        strcat(tempFormatLine," ");
+                    }
+                    if (remainder > 0) { /* Extra space */
+                        strcat(tempFormatLine," ");
+                        remainder--;
+                    }
+                    wordTokenPosition++;
+                }
+            } else { /* No space block. Fill Remainder spaces from left to right.*/
+
+                if (j == GapPerLine[i]) { /* Check if it is last word in line. */
+                    strcat(tempFormatLine,wordToken[wordTokenPosition]);
+                    if (remainder > 0) {
+                        for (int i = 0; i < remainder; i++) {
+                            strcat(tempFormatLine," ");
+                        }
+                    }
+                    strcat(tempFormatLine,"\0");
+                    wordTokenPosition++;
+                    strcpy(formatLine[i], tempFormatLine);
+                    strcpy(tempFormatLine, "");
+
+                } else {
+                    strcat(tempFormatLine,wordToken[wordTokenPosition]);
+                    strcat(tempFormatLine," ");
+
+                    if (remainder > 0) {
+                        strcat(tempFormatLine," ");
+                        remainder--;
+                    }
+                    wordTokenPosition++;
+                }
+            }
+        }
+    }
+    //Print line
+    for (int i = 0; i <= LineCount; i++) {
+        printf("%s\n", formatLine[i]);
+
+    }
+
+}
+
+int main() {
+    const int lineLength = 25;
+    char *p1 = " Hi everyone. This is the 2nd assignment. Please make sure you start early as this is going to take some time! caaao ni aaaaaaadddddddddd dasdsd";
+    char *p2 = "  Hi egnment. Pleas"
+               "e makedasdasds! @#@!#!@ !@#!@#!@fs    @!D sure you start early as this is going to"
+               " take some tim"
+               "e! cao ni mamamamamma Please make surea hahaha lala baba laji sdksajd";
+    char *p3 = "Hi everyone. Thgdsfgsd luigdsug usaduliasgdl  is the 2nd assignment. Please make sure you start eaasdddddddrly as this is going to tak"
+               "dasd"
+               "dsad"
+               "asd "
+               "              "
+               "sade some time! caaao ni aaaaaaadddddddddd dasdsd";
+
+
+    printf("%s\n\n",p1);
+    formatAndPrintParagraph(p1, lineLength);
+    printf("\n\n");
+
+    printf("%s\n\n",p2);
+    formatAndPrintParagraph(p2, lineLength);
+    printf("\n\n");
+
+    printf("%s\n\n",p3);
+    formatAndPrintParagraph(p3, lineLength);
+    printf("\n\n");
+
+
+    return 0;
+}
